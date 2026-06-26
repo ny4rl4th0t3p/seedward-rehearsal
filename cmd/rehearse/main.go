@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ny4rl4th0t3p/seedward-gentool/pkg/cli"
+	"github.com/ny4rl4th0t3p/seedward-gentool/pkg/config"
 	"github.com/ny4rl4th0t3p/seedward-gentool/pkg/rehearse"
 )
 
@@ -81,7 +81,7 @@ func exitCode(o rehearse.Outcome) int {
 // buildInput resolves a gentool config file (via gentool's own loader) and the local files it
 // names into the engine's Input. The binary path/digest come from flags, not the config.
 func buildInput(cfgPath, binary, sha string) (rehearse.Input, error) {
-	inputs, err := cli.LoadInputs(cfgPath)
+	inputs, err := config.Load(cfgPath)
 	if err != nil {
 		return rehearse.Input{}, err
 	}

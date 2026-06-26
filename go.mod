@@ -3,7 +3,7 @@ module github.com/ny4rl4th0t3p/seedward-rehearsal
 go 1.25.9
 
 require (
-	github.com/ny4rl4th0t3p/seedward-gentool v0.2.1
+	github.com/ny4rl4th0t3p/seedward-gentool v0.2.2
 	github.com/stretchr/testify v1.10.0
 )
 
