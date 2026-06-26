@@ -17,14 +17,14 @@ publishable genesis.
 rehearse --config gentool.yaml --binary /path/to/chaind [flags]
 ```
 
-| flag | default | meaning |
-|------|---------|---------|
-| `--config` | — | gentool YAML config (names the allocation CSVs + gentx dir). **Required.** |
-| `--binary` | — | chaind binary used to build and boot the genesis. **Required.** |
-| `--binary-sha256` | `""` | expected sha256 of the binary (hex); empty skips the digest check |
-| `--validators` | `2` | substitute validators to boot |
-| `--boot-wait` | `90s` | max wait for the first block |
-| `--json` | `false` | emit a machine-readable result instead of the human report |
+| flag              | default | meaning                                                                    |
+|-------------------|---------|----------------------------------------------------------------------------|
+| `--config`        | —       | gentool YAML config (names the allocation CSVs + gentx dir). **Required.** |
+| `--binary`        | —       | chaind binary used to build and boot the genesis. **Required.**            |
+| `--binary-sha256` | `""`    | expected sha256 of the binary (hex); empty skips the digest check          |
+| `--validators`    | `2`     | substitute validators to boot                                              |
+| `--boot-wait`     | `90s`   | max wait for the first block                                               |
+| `--json`          | `false` | emit a machine-readable result instead of the human report                 |
 
 Exit codes mirror the engine's tri-state: **0 = PASS, 1 = FAIL, 2 = ERROR**. The chain config and
 every input path come from the gentool config; only the binary is passed on the command line.
@@ -48,7 +48,7 @@ jobs:
           chmod +x chaind
 
       - id: rehearsal
-        uses: ny4rl4th0t3p/seedward-rehearsal@v0.1.0
+        uses: ny4rl4th0t3p/seedward-rehearsal@v0.1.1
         with:
           config: ./gentool.yaml
           binary: ./chaind

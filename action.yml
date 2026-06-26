@@ -1,0 +1,75 @@
+name: "Seedward Rehearsal"
+description: >-
+  Pre-flight a Cosmos chain launch: build the candidate genesis from a gentool config, boot an
+  ephemeral chain on substitute validators, run the on-chain assertion suite, and always tear down.
+branding:
+  icon: "check-circle"
+  color: "purple"
+
+inputs:
+  config:
+    description: "Path to the gentool YAML config (it names the allocation CSVs and the gentx dir)."
+    required: true
+  binary:
+    description: "Path to the chaind binary used to build and boot the genesis."
+    required: true
+  binary-sha256:
+    description: "Expected sha256 of the binary (hex). Empty skips the digest check."
+    required: false
+    default: ""
+  validators:
+    description: "Number of substitute validators to boot."
+    required: false
+    default: "2"
+  boot-wait:
+    description: "Max wait for the chain's first block (Go duration, e.g. 90s)."
+    required: false
+    default: "90s"
+  go-version:
+    description: "Go toolchain version used to build the runner."
+    required: false
+    default: "stable"
+
+outputs:
+  outcome:
+    description: "PASS | FAIL | ERROR"
+    value: ${{ steps.rehearse.outputs.outcome }}
+  failed-step:
+    description: "First failed step (empty on PASS)."
+    value: ${{ steps.rehearse.outputs.failed-step }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: ${{ inputs.go-version }}
+
+    - name: Build rehearse
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: go build -o "${RUNNER_TEMP}/rehearse" ./cmd/rehearse
+
+    - name: Run rehearsal
+      id: rehearse
+      shell: bash
+      run: |
+        set +e
+        "${RUNNER_TEMP}/rehearse" \
+          --config "${{ inputs.config }}" \
+          --binary "${{ inputs.binary }}" \
+          --binary-sha256 "${{ inputs.binary-sha256 }}" \
+          --validators "${{ inputs.validators }}" \
+          --boot-wait "${{ inputs.boot-wait }}" \
+          --json > "${RUNNER_TEMP}/rehearse-result.json"
+        code=$?
+        set -e
+        cat "${RUNNER_TEMP}/rehearse-result.json"
+        outcome=$(jq -r '.outcome // "ERROR"' "${RUNNER_TEMP}/rehearse-result.json")
+        failed=$(jq -r '.failed_step // ""' "${RUNNER_TEMP}/rehearse-result.json")
+        {
+          echo "outcome=${outcome}"
+          echo "failed-step=${failed}"
+        } >> "$GITHUB_OUTPUT"
+        exit $code

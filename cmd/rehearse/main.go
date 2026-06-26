@@ -25,20 +25,20 @@ func main() {
 	binary := flag.String("binary", "", "path to the chaind binary (required)")
 	binarySHA := flag.String("binary-sha256", "", "expected sha256 of the binary (hex); empty skips the digest check")
 	validators := flag.Int("validators", 2, "number of substitute validators to boot")
-	bootWait := flag.Duration("boot-wait", 90*time.Second, "max wait for the chain's first block")
+	bootWait := flag.Duration("boot-wait", defaultBootWait, "max wait for the chain's first block")
 	jsonOut := flag.Bool("json", false, "emit the result as JSON instead of a human-readable report")
 	flag.Parse()
 
 	if *cfgPath == "" || *binary == "" {
 		fmt.Fprintln(os.Stderr, "both --config and --binary are required")
 		flag.Usage()
-		os.Exit(int(exitError))
+		os.Exit(exitError)
 	}
 
 	in, err := buildInput(*cfgPath, *binary, *binarySHA)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "input error:", err)
-		os.Exit(int(exitError))
+		os.Exit(exitError)
 	}
 
 	engine := rehearse.New(
@@ -49,7 +49,7 @@ func main() {
 	res, err := engine.Run(context.Background(), in)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "engine error:", err)
-		os.Exit(int(exitError))
+		os.Exit(exitError)
 	}
 
 	if *jsonOut {
@@ -57,8 +57,11 @@ func main() {
 	} else {
 		fmt.Print(res.Report())
 	}
-	os.Exit(int(exitCode(res.Outcome)))
+	os.Exit(exitCode(res.Outcome))
 }
+
+// defaultBootWait is the default ceiling for the chain's first block.
+const defaultBootWait = 90 * time.Second
 
 // exit codes mirror the engine's tri-state outcome.
 const (
@@ -73,6 +76,8 @@ func exitCode(o rehearse.Outcome) int {
 		return exitPass
 	case rehearse.OutcomeFail:
 		return exitFail
+	case rehearse.OutcomeError:
+		return exitError
 	default:
 		return exitError
 	}
