@@ -18,6 +18,8 @@ import (
 
 	"github.com/ny4rl4th0t3p/seedward-gentool/pkg/config"
 	"github.com/ny4rl4th0t3p/seedward-gentool/pkg/rehearse"
+
+	"github.com/ny4rl4th0t3p/seedward-rehearsal/internal/version"
 )
 
 func main() {
@@ -50,6 +52,7 @@ func run() int {
 	cmd := &cobra.Command{
 		Use:           "rehearse --config <gentool.yaml> --binary <chaind>",
 		Short:         "Pre-flight a chain launch: build genesis, boot on substitute validators, assert.",
+		Version:       version.Version,
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
 		SilenceErrors: true,
