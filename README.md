@@ -23,7 +23,7 @@ publishable genesis.
 | `internal/daemon` | The daemon's config, HTTP server, and run orchestration.                                                                     |
 
 The result-fact signature uses `canonicaljson` from
-[`seedward-commons`](https://github.com/ny4rl4th0t3p/seedward-commons), the same implementation
+[`seedward-libs`](https://github.com/ny4rl4th0t3p/seedward-libs), the same implementation
 coordd verifies against.
 
 ## `cmd/rehearse` (standalone)

@@ -61,9 +61,9 @@ func TestFactFromResult_FailedStep(t *testing.T) {
 	assert.Equal(t, "build", *fact.FailedStep)
 }
 
-// TestSign_VerifiesWithCommonsCanonicalJSON is the load-bearing test: it proves the fact's
-// signature verifies under the exact scheme coordd uses (commons canonicaljson + Ed25519).
-func TestSign_VerifiesWithCommonsCanonicalJSON(t *testing.T) {
+// TestSign_VerifiesWithSharedCanonicalJSON is the load-bearing test: it proves the fact's
+// signature verifies under the exact scheme coordd uses (seedward-libs canonicaljson + Ed25519).
+func TestSign_VerifiesWithSharedCanonicalJSON(t *testing.T) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
