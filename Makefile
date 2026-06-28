@@ -2,11 +2,12 @@
 # Variables
 # ──────────────────────────────────────────────────────────────────────────────
 BINARY_DIR  := ./build
-REHEARSE    := $(BINARY_DIR)/rehearse
 
 GO          := go
 CGO_ENABLED ?= 0
 GOFLAGS     := CGO_ENABLED=$(CGO_ENABLED)
+VERSION     := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+BUILD_FLAGS := -trimpath -ldflags="-s -w -X 'github.com/ny4rl4th0t3p/seedward-rehearsal/internal/version.Version=$(VERSION)'"
 
 .DEFAULT_GOAL := help
 
@@ -22,13 +23,14 @@ help: ## Show this help message
 # Build
 # ──────────────────────────────────────────────────────────────────────────────
 .PHONY: build
-build: ## Build the rehearse binary → build/rehearse
+build: ## Build both binaries → build/rehearse and build/rehearsald
 	@mkdir -p $(BINARY_DIR)
-	$(GOFLAGS) $(GO) build -o $(REHEARSE) ./cmd/rehearse
+	$(GOFLAGS) $(GO) build $(BUILD_FLAGS) -o $(BINARY_DIR)/rehearse ./cmd/rehearse
+	$(GOFLAGS) $(GO) build $(BUILD_FLAGS) -o $(BINARY_DIR)/rehearsald ./cmd/rehearsald
 
 .PHONY: install
-install: ## Install rehearse to $(GOPATH)/bin (or ~/go/bin)
-	$(GOFLAGS) $(GO) install ./cmd/rehearse
+install: ## Install both binaries to $(GOPATH)/bin (or ~/go/bin)
+	$(GOFLAGS) $(GO) install $(BUILD_FLAGS) ./cmd/rehearse ./cmd/rehearsald
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Test
