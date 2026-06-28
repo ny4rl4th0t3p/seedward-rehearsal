@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ny4rl4th0t3p/seedward-commons/canonicaljson"
 	"github.com/ny4rl4th0t3p/seedward-gentool/pkg/rehearse"
+	"github.com/ny4rl4th0t3p/seedward-libs/canonicaljson"
 )
 
 // ResultStep is one step verdict in the result fact (§4).

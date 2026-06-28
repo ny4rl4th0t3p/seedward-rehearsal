@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ny4rl4th0t3p/seedward-commons/canonicaljson"
 	"github.com/ny4rl4th0t3p/seedward-gentool/pkg/rehearse"
+	"github.com/ny4rl4th0t3p/seedward-libs/canonicaljson"
 )
 
 func sampleResult() *rehearse.Result {
