@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -49,6 +50,33 @@ func (c *Client) GetRehearsalInput(ctx context.Context, launchID string) (Rehear
 		return RehearsalInput{}, fmt.Errorf("decode rehearsal-input: %w", err)
 	}
 	return in, nil
+}
+
+// PostRehearsalResults posts a result fact for a launch. The fact must already be signed
+// (call ResultFact.Sign first) — this method only marshals and POSTs it; coordd verifies the
+// Ed25519 signature against the launch's trusted service pubkey.
+func (c *Client) PostRehearsalResults(ctx context.Context, launchID string, fact ResultFact) error {
+	body, err := json.Marshal(fact)
+	if err != nil {
+		return fmt.Errorf("marshal result fact: %w", err)
+	}
+	url := fmt.Sprintf("%s/launches/%s/rehearsal-results", c.baseURL, launchID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	c.authorize(req)
+
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return fmt.Errorf("post rehearsal-results: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("post rehearsal-results: coordd returned %s", resp.Status)
+	}
+	return nil
 }
 
 func (c *Client) authorize(req *http.Request) {
