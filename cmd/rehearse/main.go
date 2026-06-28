@@ -7,57 +7,21 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ny4rl4th0t3p/seedward-gentool/pkg/config"
 	"github.com/ny4rl4th0t3p/seedward-gentool/pkg/rehearse"
 )
 
 func main() {
-	cfgPath := flag.String("config", "", "path to the gentool YAML config (required)")
-	binary := flag.String("binary", "", "path to the chaind binary (required)")
-	binarySHA := flag.String("binary-sha256", "", "expected sha256 of the binary (hex); empty skips the digest check")
-	validators := flag.Int("validators", 2, "number of substitute validators to boot")
-	bootWait := flag.Duration("boot-wait", defaultBootWait, "max wait for the chain's first block")
-	jsonOut := flag.Bool("json", false, "emit the result as JSON instead of a human-readable report")
-	flag.Parse()
-
-	if *cfgPath == "" || *binary == "" {
-		fmt.Fprintln(os.Stderr, "both --config and --binary are required")
-		flag.Usage()
-		os.Exit(exitError)
-	}
-
-	in, err := buildInput(*cfgPath, *binary, *binarySHA)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "input error:", err)
-		os.Exit(exitError)
-	}
-
-	engine := rehearse.New(
-		rehearse.NewProcessRuntime(*binary),
-		rehearse.WithValidators(*validators),
-		rehearse.WithBootWait(*bootWait),
-	)
-	res, err := engine.Run(context.Background(), in)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "engine error:", err)
-		os.Exit(exitError)
-	}
-
-	if *jsonOut {
-		emitJSON(res)
-	} else {
-		fmt.Print(res.Report())
-	}
-	os.Exit(exitCode(res.Outcome))
+	os.Exit(run())
 }
 
 // defaultBootWait is the default ceiling for the chain's first block.
@@ -69,6 +33,66 @@ const (
 	exitFail  = 1
 	exitError = 2
 )
+
+// run builds and executes the cobra command, returning the process exit code. Infra/setup
+// failures map to ERROR; a completed run maps to its outcome (exitCode).
+func run() int {
+	var (
+		cfgPath    string
+		binary     string
+		binarySHA  string
+		validators int
+		bootWait   time.Duration
+		jsonOut    bool
+	)
+	exit := exitPass
+
+	cmd := &cobra.Command{
+		Use:           "rehearse --config <gentool.yaml> --binary <chaind>",
+		Short:         "Pre-flight a chain launch: build genesis, boot on substitute validators, assert.",
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			in, err := buildInput(cfgPath, binary, binarySHA)
+			if err != nil {
+				return err
+			}
+			engine := rehearse.New(
+				rehearse.NewProcessRuntime(binary),
+				rehearse.WithValidators(validators),
+				rehearse.WithBootWait(bootWait),
+			)
+			res, err := engine.Run(cmd.Context(), in)
+			if err != nil {
+				return err
+			}
+			if jsonOut {
+				emitJSON(res)
+			} else {
+				fmt.Print(res.Report())
+			}
+			exit = exitCode(res.Outcome)
+			return nil
+		},
+	}
+
+	f := cmd.Flags()
+	f.StringVar(&cfgPath, "config", "", "path to the gentool YAML config (required)")
+	f.StringVar(&binary, "binary", "", "path to the chaind binary (required)")
+	f.StringVar(&binarySHA, "binary-sha256", "", "expected sha256 of the binary (hex); empty skips the digest check")
+	f.IntVar(&validators, "validators", 2, "number of substitute validators to boot")
+	f.DurationVar(&bootWait, "boot-wait", defaultBootWait, "max wait for the chain's first block")
+	f.BoolVar(&jsonOut, "json", false, "emit the result as JSON instead of a human-readable report")
+	_ = cmd.MarkFlagRequired("config")
+	_ = cmd.MarkFlagRequired("binary")
+
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return exitError
+	}
+	return exit
+}
 
 func exitCode(o rehearse.Outcome) int {
 	switch o {
